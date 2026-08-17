@@ -1,0 +1,12 @@
+[project]
+name = "am-discount-finder"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[standard]>=0.139.2",
+    "httpx>=0.27.0",
+    "beautifulsoup4>=4.14.0",
+    "python-dotenv>=1.0.0",
+]
