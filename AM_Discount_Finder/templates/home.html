@@ -1,0 +1,73 @@
+{% extends "layout.html" %}
+{% block content %}
+<!-- Intro Banner (native to the page) -->
+{% if not query %}
+<div class="content-section p-4 mb-4 rounded-3 border shadow-sm mt-4">
+    <div class="d-flex align-items-center gap-3 mb-2">
+        <h1 class="h3 mb-0 fw-bold">Welcome to the Discount Scraper!</h1>
+    </div>
+    <p class="text-body-secondary mb-0 fs-6">
+        This is a site that scrapes Amazon for discounted products based on your search queries. Use the search bar below to
+        find the best deals within your interests!
+    </p>
+    <p></p>
+    <p>Each search can show up to 50 results. Sometimes it can take a while to load all results.</p>
+    <p></p>
+    <p class="fw-bold">If you don't find the results you like, click the search button to refresh some of the results!</p>
+</div>
+{% endif %}
+<!-- Search Bar -->
+<form class="mb-4 mt-4" action="{{ url_for('search') }}" method="get">
+    <div class="input-group input-group-lg">
+        <input class="form-control" type="search" name="q"
+            placeholder="Search Amazon deals (e.g. mechanical keyboards, fashion)" value="{{ query or '' }}"
+            aria-label="Search Amazon deals">
+        <button class="btn btn-primary" type="submit">Search</button>
+    </div>
+</form>
+{% if query %}
+<div class="mb-3">
+    {% if search_message %}
+    <p class="text-muted"><em>{{ search_message }}</em></p>
+    {% endif %}
+</div>
+{% endif %}
+<!-- Product Grid (only rendered when search results exist) -->
+{% if posts %}
+<div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4 mb-4">
+    {% for post in posts %}
+    <div class="col d-flex align-items-stretch">
+        <article class="content-section p-3 d-flex flex-column h-100 w-100 rounded shadow-sm border">
+            <!-- Product Image -->
+            <div class="product-preview-wrapper text-center mb-3">
+                <img class="article-img img-fluid{% if post.image_url %} article-product-image{% endif %}"
+                    src="{{ post.image_url or '/static/profile_pics/default.jpg' }}" alt="{{ post.title }}"
+                    style="max-height: 160px; object-fit: contain;" loading="lazy">
+            </div>
+            <!-- Card Content -->
+            <div class="d-flex flex-column flex-grow-1">
+                <h5 class="fs-6 mb-2">
+                    {% if post.url %}
+                    <a class="article-title text-decoration-none fw-bold" href="{{ post.url }}" target="_blank"
+                        rel="noopener">{{ post.title }}</a>
+                    {% else %}
+                    <a class="article-title text-decoration-none fw-bold"
+                        href="{{ url_for('post_page', post_id=post.id) }}">{{ post.title }}</a>
+                    {% endif %}
+                </h5>
+                <div class="article-content small mb-3 flex-grow-1">
+                    {{ post.content | safe }}
+                </div>
+                {% if post.url %}
+                <div class="mt-auto pt-2">
+                    <a class="btn btn-sm btn-outline-primary w-100" href="{{ post.url }}" target="_blank"
+                        rel="noopener">View on Amazon</a>
+                </div>
+                {% endif %}
+            </div>
+        </article>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock content %}
