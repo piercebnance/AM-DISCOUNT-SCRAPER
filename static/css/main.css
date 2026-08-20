@@ -173,7 +173,7 @@ a.article-title:focus {
 
 /* Custom Button Colors - Light Mode */
 .btn-outline-primary {
-  --bs-btn-color: #527c9f;
+  --bs-btn-color: #be1616;
   --bs-btn-border-color: #527c9f;
   --bs-btn-hover-color: #fff;
   --bs-btn-hover-bg: #466a87;
@@ -207,14 +207,14 @@ a.article-title:focus {
 
 .btn-primary {
   --bs-btn-color: #fff;
-  --bs-btn-bg: #527c9f;
-  --bs-btn-border-color: #527c9f;
+  --bs-btn-bg: var(--color-steel);
+  --bs-btn-border-color: var(--color-steel);
   --bs-btn-hover-color: #fff;
-  --bs-btn-hover-bg: #466a87;
-  --bs-btn-hover-border-color: #3f6179;
+  --bs-btn-hover-bg: #8f1717;
+  --bs-btn-hover-border-color: #841515;
   --bs-btn-active-color: #fff;
-  --bs-btn-active-bg: #3f6179;
-  --bs-btn-active-border-color: #3a5b72;
+  --bs-btn-active-bg: #841515;
+  --bs-btn-active-border-color: #791313;
 }
 
 .btn-danger {

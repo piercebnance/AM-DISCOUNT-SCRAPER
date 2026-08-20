@@ -67,11 +67,11 @@
         <nav class="navbar navbar-expand-md bg-steel fixed-top" data-bs-theme="dark">
             <div class="container">
                 <!-- Brand Link with Logo Image Placeholder -->
-                <a class="navbar-brand me-4 d-flex align-items-center gap-2" href="{{ url_for('home') }}">
+                <a class="navbar-brand me-4 d-flex align-items-center gap-2">
                     <!-- Logo Image Placeholder -->
                     <img src="{{ url_for('static', path='icons/charlie_chip_digital_file.png') }}" alt="Logo" width="50" height="50"
                         class="d-inline-block rounded"></svg>
-                    <span>FRANCEMAN'S WONDERFUL AMAZON SCRAPER</span>
+                    <span style="font-family: 'Verdana'; font-weight: bold;">FRANCEMAN'S WONDERFUL AMAZON SCRAPER</span>
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggle"
                     aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
@@ -79,8 +79,13 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbarToggle">
                     <div class="navbar-nav me-auto">
-                        <a class="nav-link active" aria-current="page" href="{{ url_for('home') }}">Home</a>
+                        
+                        <img src="{{ url_for('static', path='icons/arg-dollar-50-trans.gif') }}" alt="Logo" width="55" height="55"
+                        class="d-inline-block rounded"></svg>
+                        <p></p>
+                        <a style="font-family: 'Verdana';" class="nav-link active" aria-current="page" href="{{ url_for('home') }}">Home</a>
                     </div>
+                    
                     <!-- Navbar Right Side -->
                     <div class="navbar-nav">
                         <div class="nav-item dropdown">
