@@ -282,6 +282,7 @@ def _sanitize_title(text: str) -> str:
         r"free delivery",
         r"free shipping",
         r"Amazon Store Card",
+        r"forestry practices",
     ]
     if any(re.search(pattern, sanitized.lower()) for pattern in ignore_title_patterns):
         return ""
@@ -339,7 +340,7 @@ def _is_discount_text(text: str) -> bool:
         r"free delivery",
         r"free shipping",
         r"Amazon Store Card",
-
+        r"forestry practices",
     ]
     if any(re.search(pattern, lowered) for pattern in ignore_patterns):
         return False
