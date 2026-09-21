@@ -17,14 +17,22 @@
 </div>
 {% endif %}
 <!-- Search Bar -->
-<form class="mb-4 mt-4" action="{{ url_for('search') }}" method="get">
+<form id="search-form" class="mb-4 mt-4" action="{{ url_for('search') }}" method="get">
     <div class="input-group input-group-lg">
         <input class="form-control" type="search" name="q"
             placeholder="Search Amazon deals (e.g. mechanical keyboards, fashion)" value="{{ query or '' }}"
             aria-label="Search Amazon deals">
-        <button class="btn btn-primary" type="submit">Search</button>
+        <button id="search-button" class="btn btn-primary" type="submit">Search</button>
     </div>
 </form>
+<div id="search-loading" class="search-loading d-none mb-4 mt-4" role="status" aria-live="polite" aria-hidden="true">
+    <div class="row">
+        <div class="col d-flex justify-content-center">
+            <img src="{{ url_for('static', path='icons/racoon-heist3.gif') }}" alt="" width="150" height="150">
+            <span>Infiltrating and scraping...</span>
+        </div>
+    </div>
+</div>
 {% if query %}
 <div class="mb-3">
     {% if search_message %}
@@ -32,6 +40,8 @@
     {% endif %}
 </div>
 {% endif %}
+
+
 <!-- Product Grid (only rendered when search results exist) -->
 {% if posts %}
 <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4 mb-4">
@@ -70,4 +80,16 @@
     {% endfor %}
 </div>
 {% endif %}
+
+<script>
+    document.getElementById('search-form').addEventListener('submit', () => {
+        const loading = document.getElementById('search-loading');
+        const searchButton = document.getElementById('search-button');
+
+        loading.classList.remove('d-none');
+        loading.setAttribute('aria-hidden', 'false');
+        searchButton.disabled = true;
+        searchButton.textContent = 'Searching...';
+    });
+</script>
 {% endblock content %}
