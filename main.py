@@ -2,7 +2,7 @@ import logging
 import os
 import re
 from datetime import date
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, urljoin, urlsplit, urlunsplit
 
 from dotenv import load_dotenv
 import httpx
@@ -30,6 +30,26 @@ SCRAPINGBEE_API_KEY = os.getenv("SCRAPINGBEE_API_KEY", "")
 
 def build_amazon_search_url(query: str) -> str:
     return f"https://www.amazon.com/s?k={quote_plus(query)}"
+
+
+def _normalize_amazon_product_url(href: str | None) -> str | None:
+    if not href or href != href.strip() or "\\" in href or any(char.isspace() for char in href):
+        return None
+
+    try:
+        parsed = urlsplit(urljoin("https://www.amazon.com/", href))
+        if (
+            parsed.scheme.lower() != "https"
+            or parsed.hostname != "www.amazon.com"
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.port not in (None, 443)
+        ):
+            return None
+    except ValueError:
+        return None
+
+    return urlunsplit(("https", "www.amazon.com", parsed.path, parsed.query, parsed.fragment))
 
 
 def extract_price(result) -> str:
@@ -91,6 +111,15 @@ async def fetch_amazon_search_page(query: str) -> str:
         return text
 
 
+def _require_scrapingbee_api_key() -> None:
+    if not SCRAPINGBEE_API_KEY:
+        logger.error("Search unavailable: SCRAPINGBEE_API_KEY is not configured")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Product search is not configured. Set SCRAPINGBEE_API_KEY and restart the app.",
+        )
+
+
 def parse_amazon_discounted_products(html: str, query: str, max_items: int = 20) -> list[dict]:
     soup = BeautifulSoup(html, "html.parser")
     results: list[dict] = []
@@ -115,21 +144,18 @@ def parse_amazon_discounted_products(html: str, query: str, max_items: int = 20)
         if not title_tag or not current_price or not link_tag:
             continue
 
-        relative_link = link_tag["href"] if link_tag and link_tag.has_attr("href") else ""
-        product_url = (
-            f"https://www.amazon.com{relative_link}"
-            if relative_link.startswith("/")
-            else relative_link
-        )
+        product_url = _normalize_amazon_product_url(link_tag.get("href"))
+        if product_url is None:
+            continue
 
-        content_parts = [f"<strong>Current price:</strong> {current_price}"]
+        content_parts = [f"Current price: {current_price}"]
         if original_price and original_num is not None and current_num is not None and original_num > current_num:
-            content_parts.append(f"<strong>Original price:</strong> {original_price}")
+            content_parts.append(f"Original price: {original_price}")
         if discount_label:
-            content_parts.append(f"<strong>Discount price:</strong> {current_price}")
-            content_parts.append(f"<strong>Discount info:</strong> {discount_label}")
+            content_parts.append(f"Discount price: {current_price}")
+            content_parts.append(f"Discount info: {discount_label}")
         else:
-            content_parts.append("<strong>Discount info:</strong> No explicit discount signal detected")
+            content_parts.append("Discount info: No explicit discount signal detected")
 
         if not discount_label and not (original_num is not None and current_num is not None and original_num > current_num):
             continue
@@ -143,7 +169,7 @@ def parse_amazon_discounted_products(html: str, query: str, max_items: int = 20)
                 "original_price": original_price if original_price and original_num is not None and current_num is not None and original_num > current_num else "",
                 "discount_price": current_price if discount_label else "",
                 "discount_label": discount_label,
-                "content": "<br>".join(content_parts),
+                "content": "\n".join(content_parts),
                 "date_posted": date.today().strftime("%B %d, %Y"),
                 "url": product_url,
                 "image_url": image_url,
@@ -380,18 +406,15 @@ def parse_amazon_search_results(html: str, query: str, max_items: int = 50) -> l
         if not title_tag or not current_price or not link_tag:
             continue
 
-        relative_link = link_tag["href"] if link_tag.has_attr("href") else ""
-        product_url = (
-            f"https://www.amazon.com{relative_link}"
-            if relative_link.startswith("/")
-            else relative_link
-        )
+        product_url = _normalize_amazon_product_url(link_tag.get("href"))
+        if product_url is None:
+            continue
 
-        content_parts = [f"<strong>Current price:</strong> {current_price}"]
+        content_parts = [f"Current price: {current_price}"]
         if original_price and original_num is not None and current_num is not None and original_num > current_num:
-            content_parts.append(f"<strong>Original price:</strong> {original_price}")
+            content_parts.append(f"Original price: {original_price}")
         if discount_label:
-            content_parts.append(f"<strong>Discount info:</strong> {discount_label}")
+            content_parts.append(f"Discount info: {discount_label}")
 
         if not discount_label and not (original_num is not None and current_num is not None and original_num > current_num):
             continue
@@ -405,7 +428,7 @@ def parse_amazon_search_results(html: str, query: str, max_items: int = 50) -> l
                 "original_price": original_price if original_price and original_num is not None and current_num is not None and original_num > current_num else "",
                 "discount_price": current_price if discount_label else "",
                 "discount_label": discount_label,
-                "content": "<br>".join(content_parts),
+                "content": "\n".join(content_parts),
                 "date_posted": date.today().strftime("%B %d, %Y"),
                 "url": product_url,
                 "image_url": image_url,
@@ -440,13 +463,19 @@ async def search(request: Request, q: str | None = None):
     if not q:
         return templates.TemplateResponse(request, "home.html", {"posts": posts, "title": "Home", "query": None})
 
+    _require_scrapingbee_api_key()
+
     try:
         html = await fetch_amazon_search_page(q)
         search_results = parse_amazon_discounted_products(html, q)
         if not search_results:
             search_results = parse_amazon_search_results(html, q)
     except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc))
+        logger.error("Search request failed: %s", type(exc).__name__)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Search is temporarily unavailable. Please try again later.",
+        ) from exc
 
     search_message = ""
 
@@ -494,6 +523,7 @@ async def search(request: Request, q: str | None = None):
 
 @app.get("/api/search")
 async def api_search(q: str):
+    _require_scrapingbee_api_key()
     html = await fetch_amazon_search_page(q)
     return parse_amazon_discounted_products(html, q, max_items=50)
 

@@ -1,6 +1,6 @@
 import unittest
 
-from main import parse_amazon_discounted_products
+from main import parse_amazon_discounted_products, parse_amazon_search_results
 
 
 class AmazonParserTests(unittest.TestCase):
@@ -72,6 +72,39 @@ class AmazonParserTests(unittest.TestCase):
         self.assertEqual(results[0]["title"], "Recycled T-Shirt")
         self.assertFalse(results[0]["discounted"])
         self.assertNotIn("recycled material", results[0]["content"].lower())
+
+    def test_only_accepts_https_amazon_product_urls(self) -> None:
+        links = [
+            ("111", "/dp/111"),
+            ("222", "https://www.amazon.com/dp/222"),
+            ("333", "//www.amazon.com/dp/333"),
+            ("444", "https://evil.example/dp/444"),
+            ("555", "//evil.example/dp/555"),
+            ("666", "javascript:alert(1)"),
+            ("777", "https://user@www.amazon.com/dp/777"),
+        ]
+        html = "".join(
+            f"""
+            <div data-asin="{asin}" data-component-type="s-search-result">
+                <h2><a href="{href}"><span>Widget {asin}</span></a></h2>
+                <span class="a-price"><span class="a-offscreen">$19.99</span></span>
+                <span class="a-color-price">Save 20%</span>
+            </div>
+            """
+            for asin, href in links
+        )
+
+        for parser in (parse_amazon_discounted_products, parse_amazon_search_results):
+            with self.subTest(parser=parser.__name__):
+                results = parser(html, "widget")
+                self.assertEqual(
+                    [result["url"] for result in results],
+                    [
+                        "https://www.amazon.com/dp/111",
+                        "https://www.amazon.com/dp/222",
+                        "https://www.amazon.com/dp/333",
+                    ],
+                )
 
 
 if __name__ == "__main__":

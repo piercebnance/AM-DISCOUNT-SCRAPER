@@ -65,8 +65,8 @@
                         href="{{ url_for('post_page', post_id=post.id) }}">{{ post.title }}</a>
                     {% endif %}
                 </h5>
-                <div class="article-content small mb-3 flex-grow-1">
-                    {{ post.content | safe }}
+                <div class="article-content small mb-3 flex-grow-1" style="white-space: pre-line;">
+                    {{ post.content }}
                 </div>
                 {% if post.url %}
                 <div class="mt-auto pt-2">
